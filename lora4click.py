@@ -415,11 +415,11 @@ class MipotCmd():
         rssi_dbm = int.from_bytes(indication[10:12], 'little', signed=True)
         snr = indication[12]
         if len(indication) > 12:
-            port: Optional[int] = indication[12]
+            port: Optional[int] = indication[13]
         else:
             port = None
         if len(indication) > 13 and indication[9] == 0x01:
-            data: Optional[bytes] = indication[13:]
+            data: Optional[bytes] = indication[14:]
         else:
             data = None
 
