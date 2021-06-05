@@ -1,0 +1,66 @@
+/*
+ * Device tree overlay for Microe PI 3 click shield
+ *
+ * The shield uses SPI bus 1 to connect a MCP3204 ADC unit.
+ *
+ * Any client should define itselv as an iio client.
+ *
+ * Userspace access can be made using the path
+ *  /sys/bus/iio/devices/iio:device0
+ *
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "brcm,bcm2835";
+
+	/* Configure pin controller for SPI1 with CS on GPIO 16, pin 36 */
+	fragment@0 {
+		target = <&gpio>;
+		__overlay__ {
+			spi1_pins: spi1_pins {
+				brcm,pins = <19 20 21>;
+				brcm,function = <3>;
+			};
+
+			spi1_cs_pins: spi1_cs_pins {
+				brcm,pins = <16>;
+				brcm,function = <1>;
+			};
+		};
+	};
+
+	/* Enable SPI1 */
+	fragment@1 {
+		target = <&spi1>;
+		__overlay__ {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&spi1_pins &spi1_cs_pins>;
+			cs-gpios = <&gpio 16 1>;
+			status = "okay";
+
+			/* Add ADC slave */
+			mcp3204_10: mcp3204@0 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				compatible = "microchip,mcp3204";
+				reg = <0>;
+				spi-max-frequency = <2000000>;
+				status = "okay";
+				vref-supply = <&vdd_5v0_reg>;
+			};
+		};
+	};
+
+	/* Enable clock */
+	fragment@2 {
+		target = <&aux>;
+		__overlay__ {
+			status = "okay";
+		};
+	};
+};
