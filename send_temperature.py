@@ -44,13 +44,13 @@ def joined() -> bool:
 
     # Request OTAA join
     if status == 0:  # Not activated
-        print('Requesting join')
+        print('Requesting join', flush=True)
         result = cmd.join(1)
         if result == 1:
             raise RuntimeError('Join failed because of an invalid parameter')
 
     # Wait for join indication
-    print('Waiting for network join')
+    print('Waiting for network join', flush=True)
     got_join_indication = False
     now = time.clock_gettime(time.CLOCK_MONOTONIC)
     timeout = now + 300
@@ -63,13 +63,13 @@ def joined() -> bool:
 
     # No join indication?
     if not got_join_indication:
-        print('Waiting for join indication timed out')
+        print('Waiting for join indication timed out', flush=True)
         return False
 
     if join_indication['success']:
-        print('Join successfull')
+        print('Join successfull', flush=True)
     else:
-        print('Join failed')
+        print('Join failed', flush=True)
 
     # Joined=
     return join_indication['success']
@@ -96,36 +96,34 @@ def main() -> int:
             payload = encode_temperature(temperature)
             result = cmd.tx_msg(payload, 1, False)
             if result != 0:
-                print('Sending data failed with error code %s' % (result))
+                print('Sending data failed with error code %s' % (result), flush=True)
             else:
                 num_data_send += 1
                 # Wait for tx indication
-                got_tx_indication = False
-                while not got_tx_indication:
-                    tx_indication = cmd.get_parsed_indication(60)
-                    if tx_indication is None:
-                        raise RuntimeError('Timeout while waiting for TX indication')
-                    got_tx_indication = (tx_indication['indication'] == 'tx_msg_uncon')
-                data_rate = tx_indication['data_rate']
-                print('Sent temperature %f with a data rate of %d' % (temperature, data_rate))
-                # Adjust rate we send out the temperature.
-                # The airtime per sensor should not exceed 30 seconds per day
-                # in the community network. However, the very first packets
-                # will always be sent with a low data rate.
-                if num_data_send > 4:
-                    if data_rate >= 4:
-                        new_interval_seconds = 300
-                    elif data_rate == 3:
-                        new_interval_seconds = 600
-                    elif data_rate == 2:
-                        new_interval_seconds = 1200
-                    elif data_rate == 1:
-                        new_interval_seconds = 1800
-                    else:
-                        new_interval_seconds = 3600
-                    if interval_seconds != new_interval_seconds:
-                        print('Adjusting interval to %d minutes' % (new_interval_seconds / 60))
-                        interval_seconds = new_interval_seconds
+                tx_indication = cmd.get_parsed_indication(60)
+                if tx_indication is None:
+                    print('Timeout while waiting for TX indication', flush=True)
+                else:
+                    data_rate = tx_indication['data_rate']
+                    print('Sent temperature %f with a data rate of %d' % (temperature, data_rate), flush=True)
+                    # Adjust rate we send out the temperature.
+                    # The airtime per sensor should not exceed 30 seconds per day
+                    # in the community network. However, the very first packets
+                    # will always be sent with a low data rate.
+                    if num_data_send > 4:
+                        if data_rate >= 4:
+                            new_interval_seconds = 300
+                        elif data_rate == 3:
+                            new_interval_seconds = 600
+                        elif data_rate == 2:
+                            new_interval_seconds = 1200
+                        elif data_rate == 1:
+                            new_interval_seconds = 1800
+                        else:
+                            new_interval_seconds = 3600
+                        if interval_seconds != new_interval_seconds:
+                            print('Adjusting interval to %d minutes' % (new_interval_seconds / 60), flush=True)
+                            interval_seconds = new_interval_seconds
 
         # Wait for any indication until the next value can be send
         now = time.clock_gettime(time.CLOCK_MONOTONIC)
@@ -149,16 +147,16 @@ def main() -> int:
                     print('  Received signal strength: %d dBm' % (indication['rssi_dbm']))
                     print('  Signal to noise ratio: %d dB' % (indication['snr_db']))
                     if indication['frame_pending']:
-                        print('  More data available')
+                        print('  More data available', flush=True)
                     else:
-                        print('  No more data available')
+                        print('  No more data available', flush=True)
                     if indication['port'] is not None:
-                        print('  Port: %d' % (indication['port']))
+                        print('  Port: %d' % (indication['port']), flush=True)
                     if indication['data'] is not None and len(indication['data']) > 0:
                         print('  Data:', end='')
                         for b in indication['data']:
                             print(' %02X' % (b), end='')
-                        print('')
+                        print('', flush=True)
             now = time.clock_gettime(time.CLOCK_MONOTONIC)
 
     return 0
